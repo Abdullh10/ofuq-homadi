@@ -1,6 +1,8 @@
-import { LayoutDashboard, Users, AlertTriangle, FileText, BarChart3, FlaskConical } from "lucide-react";
+import { LayoutDashboard, Users, AlertTriangle, FileText, BarChart3, FlaskConical, LogIn, LogOut } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/use-auth";
+import { Button } from "@/components/ui/button";
 import {
   Sidebar,
   SidebarContent,
@@ -24,7 +26,8 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
-  
+  const navigate = useNavigate();
+  const { session, signOut } = useAuth();
 
   return (
     <Sidebar side="right" className="border-l-0" collapsible="icon">
@@ -69,6 +72,30 @@ export function AppSidebar() {
           </SidebarGroup>
         </SidebarContent>
 
+        {/* Auth button */}
+        <div className="p-3 border-t border-sidebar-border mt-auto">
+          {session ? (
+            <Button
+              variant="ghost"
+              size={collapsed ? "icon" : "default"}
+              className="w-full text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+              onClick={async () => { await signOut(); }}
+            >
+              <LogOut className="h-5 w-5" />
+              {!collapsed && <span className="mr-2">تسجيل الخروج</span>}
+            </Button>
+          ) : (
+            <Button
+              variant="ghost"
+              size={collapsed ? "icon" : "default"}
+              className="w-full text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+              onClick={() => navigate("/login")}
+            >
+              <LogIn className="h-5 w-5" />
+              {!collapsed && <span className="mr-2">دخول المشرف</span>}
+            </Button>
+          )}
+        </div>
       </div>
     </Sidebar>
   );
