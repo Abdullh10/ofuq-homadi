@@ -2,6 +2,7 @@ import { useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useStudents, useAllGrades, useAllBehaviors, useDeleteStudent, useUpdateStudent } from "@/hooks/use-students";
 import { AddStudentDialog } from "@/components/students/AddStudentDialog";
+import { EditStudentDialog } from "@/components/students/EditStudentDialog";
 import { StudentRiskBadge } from "@/components/students/StudentRiskBadge";
 import { analyzeStudent, calculateWeightedAverage } from "@/lib/analysis-engine";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Link } from "react-router-dom";
-import { Search, Eye, Trash2, Archive } from "lucide-react";
+import { Search, Eye, Trash2, Archive, Pencil } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 export default function Students() {
@@ -140,6 +141,7 @@ export default function Students() {
                           <Link to={`/students/${student.id}`}>
                             <Button size="icon" variant="ghost"><Eye className="h-4 w-4" /></Button>
                           </Link>
+                          <EditStudentDialog student={student} />
                           <Button size="icon" variant="ghost"
                             onClick={() => updateStudent.mutate({ id: student.id, status: "archived" })}>
                             <Archive className="h-4 w-4" />
