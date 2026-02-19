@@ -17,7 +17,6 @@ export function AppLayout({ children, title }: Props) {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
-        <AppSidebar />
         <div className="flex-1 flex flex-col min-w-0">
           {/* Top bar */}
           <header className="h-14 border-b bg-card flex items-center justify-between px-4 shrink-0">
@@ -40,6 +39,7 @@ export function AppLayout({ children, title }: Props) {
             {children}
           </main>
         </div>
+        <AppSidebar />
       </div>
     </SidebarProvider>
   );
