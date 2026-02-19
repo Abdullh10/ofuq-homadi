@@ -347,6 +347,21 @@ export function useUpdateTreatmentPlan() {
   });
 }
 
+export function useDeleteTreatmentPlan() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("treatment_plans").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["treatment-plans"] });
+      toast.success("تم حذف الخطة العلاجية");
+    },
+    onError: () => toast.error("حدث خطأ أثناء الحذف"),
+  });
+}
+
 export function useAddIntervention() {
   const qc = useQueryClient();
   return useMutation({

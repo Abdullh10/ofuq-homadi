@@ -1,14 +1,15 @@
 import { AppLayout } from "@/components/layout/AppLayout";
-import { useTreatmentPlans, useStudents, useAllGrades, useAllBehaviors, useAddTreatmentPlan } from "@/hooks/use-students";
+import { useTreatmentPlans, useStudents, useAllGrades, useAllBehaviors, useAddTreatmentPlan, useDeleteTreatmentPlan } from "@/hooks/use-students";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Plus, Sparkles } from "lucide-react";
+import { FileText, Plus, Sparkles, Trash2, Printer } from "lucide-react";
 import { Link } from "react-router-dom";
 import { analyzeStudent, calculateWeightedAverage, generateTreatmentPlan } from "@/lib/analysis-engine";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 export default function Plans() {
   const { data: plans = [] } = useTreatmentPlans();
@@ -16,8 +17,10 @@ export default function Plans() {
   const { data: allGrades = [] } = useAllGrades();
   const { data: allBehaviors = [] } = useAllBehaviors();
   const addPlan = useAddTreatmentPlan();
+  const deletePlan = useDeleteTreatmentPlan();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState("");
+  const printRef = useRef<HTMLDivElement>(null);
 
   const classAvg = allGrades.length > 0 ? calculateWeightedAverage(allGrades) : 0;
 
@@ -43,6 +46,41 @@ export default function Plans() {
     }, {
       onSuccess: () => setDialogOpen(false),
     });
+  };
+
+  const handlePrint = (planId: string) => {
+    const planEl = document.getElementById(`plan-${planId}`);
+    if (!planEl) return;
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html dir="rtl" lang="ar">
+      <head>
+        <meta charset="utf-8" />
+        <title>الخطة العلاجية</title>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: 'Segoe UI', Tahoma, Arial, sans-serif; padding: 40px; color: #1a1a1a; direction: rtl; }
+          h2 { font-size: 22px; margin-bottom: 8px; color: #1e3a5f; }
+          h4 { font-size: 14px; margin-bottom: 6px; font-weight: 600; }
+          p, li { font-size: 13px; line-height: 1.7; color: #444; }
+          ul { padding-right: 20px; margin-bottom: 12px; }
+          .section { margin-bottom: 18px; padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px; }
+          .header { text-align: center; margin-bottom: 24px; border-bottom: 2px solid #1e3a5f; padding-bottom: 12px; }
+          .meta { font-size: 12px; color: #888; margin-top: 4px; }
+          .indicators { background: #f3f4f6; padding: 12px; border-radius: 8px; }
+          @media print { body { padding: 20px; } }
+        </style>
+      </head>
+      <body>
+        ${planEl.innerHTML}
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => { printWindow.print(); }, 300);
   };
 
   const statusMap: Record<string, { label: string; variant: "default" | "secondary" | "destructive" }> = {
@@ -107,12 +145,43 @@ export default function Plans() {
                           {studentName}
                         </Link>
                       </CardTitle>
-                      <Badge variant={status.variant}>{status.label}</Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={status.variant}>{status.label}</Badge>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handlePrint(plan.id)} title="طباعة / تصدير PDF">
+                          <Printer className="h-4 w-4" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" title="حذف الخطة">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent dir="rtl">
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>هل أنت متأكد من حذف هذه الخطة؟</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                سيتم حذف الخطة العلاجية للطالب "{studentName}" نهائياً ولا يمكن التراجع.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter className="flex-row-reverse gap-2">
+                              <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                              <AlertDialogAction
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                onClick={() => deletePlan.mutate(plan.id)}
+                              >
+                                حذف
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </div>
                     <p className="text-xs text-muted-foreground">
                       {new Date(plan.created_at).toLocaleDateString("ar-SA")} • {plan.duration_weeks} أسابيع
                     </p>
                   </CardHeader>
+
+                  {/* Visible card content */}
                   <CardContent className="space-y-3 text-sm">
                     {plan.case_analysis && (
                       <div>
@@ -156,6 +225,53 @@ export default function Plans() {
                       </div>
                     )}
                   </CardContent>
+
+                  {/* Hidden printable content */}
+                  <div id={`plan-${plan.id}`} className="hidden">
+                    <div className="header">
+                      <h2>الخطة العلاجية - {studentName}</h2>
+                      <p className="meta">
+                        تاريخ الإنشاء: {new Date(plan.created_at).toLocaleDateString("ar-SA")} • المدة: {plan.duration_weeks} أسابيع • الحالة: {status.label}
+                      </p>
+                    </div>
+                    {plan.case_analysis && (
+                      <div className="section">
+                        <h4>📋 تحليل الحالة</h4>
+                        <p>{plan.case_analysis}</p>
+                      </div>
+                    )}
+                    {academic && (
+                      <div className="section">
+                        <h4>📚 الخطة الأكاديمية</h4>
+                        <ul>{Object.values(academic).map((v, i) => `<li>${v}</li>`).join("")}</ul>
+                      </div>
+                    )}
+                    {behavioral && (
+                      <div className="section">
+                        <h4>🎯 الخطة السلوكية</h4>
+                        <ul>{Object.values(behavioral).map((v, i) => `<li>${v}</li>`).join("")}</ul>
+                      </div>
+                    )}
+                    {plan.counselor_role && (
+                      <div className="section">
+                        <h4>👨‍⚕️ دور المرشد</h4>
+                        <p>{plan.counselor_role}</p>
+                      </div>
+                    )}
+                    {plan.parent_role && (
+                      <div className="section">
+                        <h4>👨‍👩‍👦 دور ولي الأمر</h4>
+                        <p>{plan.parent_role}</p>
+                      </div>
+                    )}
+                    {indicators?.target_average && (
+                      <div className="section indicators">
+                        <h4>📊 مؤشرات النجاح</h4>
+                        <p>المعدل المستهدف: {indicators.target_average}%</p>
+                        {plan.target_improvement && <p>نسبة التحسن المستهدفة: {plan.target_improvement}%</p>}
+                      </div>
+                    )}
+                  </div>
                 </Card>
               );
             })}
