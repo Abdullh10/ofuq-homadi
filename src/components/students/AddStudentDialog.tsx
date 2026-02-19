@@ -12,7 +12,7 @@ export function AddStudentDialog() {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [grade, setGrade] = useState("الأول الثانوي");
-  const [section, setSection] = useState("أ");
+  const [section, setSection] = useState("١");
   const [notes, setNotes] = useState("");
   const addStudent = useAddStudent();
 
@@ -60,11 +60,11 @@ export function AddStudentDialog() {
               </Select>
             </div>
             <div>
-              <Label>الفصل</Label>
+              <Label>الشعبة</Label>
               <Select value={section} onValueChange={setSection}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {["أ", "ب", "ج", "د", "هـ"].map(s => (
+                  {["١", "٢", "٣", "٤", "٥", "٦", "٧"].map(s => (
                     <SelectItem key={s} value={s}>{s}</SelectItem>
                   ))}
                 </SelectContent>

@@ -22,6 +22,7 @@ export default function Students() {
 
   const [search, setSearch] = useState("");
   const [gradeFilter, setGradeFilter] = useState("all");
+  const [sectionFilter, setSectionFilter] = useState("all");
   const [riskFilter, setRiskFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("active");
 
@@ -36,6 +37,7 @@ export default function Students() {
   const filtered = studentsWithAnalysis.filter(({ student, analysis }) => {
     if (search && !student.name.includes(search)) return false;
     if (gradeFilter !== "all" && student.grade !== gradeFilter) return false;
+    if (sectionFilter !== "all" && student.section !== sectionFilter) return false;
     if (riskFilter !== "all" && analysis.riskLevel !== riskFilter) return false;
     if (statusFilter !== "all" && student.status !== statusFilter) return false;
     return true;
@@ -50,12 +52,7 @@ export default function Students() {
             <div className="flex flex-wrap gap-3 items-center">
               <div className="relative flex-1 min-w-[200px]">
                 <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="بحث بالاسم..."
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  className="pr-9"
-                />
+                <Input placeholder="بحث بالاسم..." value={search} onChange={e => setSearch(e.target.value)} className="pr-9" />
               </div>
               <Select value={gradeFilter} onValueChange={setGradeFilter}>
                 <SelectTrigger className="w-[160px]"><SelectValue placeholder="الصف" /></SelectTrigger>
@@ -64,6 +61,15 @@ export default function Students() {
                   <SelectItem value="الأول الثانوي">الأول الثانوي</SelectItem>
                   <SelectItem value="الثاني الثانوي">الثاني الثانوي</SelectItem>
                   <SelectItem value="الثالث الثانوي">الثالث الثانوي</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={sectionFilter} onValueChange={setSectionFilter}>
+                <SelectTrigger className="w-[120px]"><SelectValue placeholder="الشعبة" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">جميع الشعب</SelectItem>
+                  {["١", "٢", "٣", "٤", "٥", "٦", "٧"].map(s => (
+                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <Select value={riskFilter} onValueChange={setRiskFilter}>
@@ -98,7 +104,7 @@ export default function Students() {
                 <TableRow>
                   <TableHead>الاسم</TableHead>
                   <TableHead>الصف</TableHead>
-                  <TableHead>الفصل</TableHead>
+                  <TableHead>الشعبة</TableHead>
                   <TableHead>المعدل</TableHead>
                   <TableHead>المستوى</TableHead>
                   <TableHead>الاتجاه</TableHead>
@@ -109,9 +115,7 @@ export default function Students() {
               <TableBody>
                 {filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
-                      لا توجد نتائج
-                    </TableCell>
+                    <TableCell colSpan={8} className="text-center text-muted-foreground py-8">لا توجد نتائج</TableCell>
                   </TableRow>
                 ) : (
                   filtered.map(({ student, analysis }) => (
@@ -136,23 +140,12 @@ export default function Students() {
                           <Link to={`/students/${student.id}`}>
                             <Button size="icon" variant="ghost"><Eye className="h-4 w-4" /></Button>
                           </Link>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => updateStudent.mutate({ id: student.id, status: "archived" })}
-                          >
+                          <Button size="icon" variant="ghost"
+                            onClick={() => updateStudent.mutate({ id: student.id, status: "archived" })}>
                             <Archive className="h-4 w-4" />
                           </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="text-destructive"
-                            onClick={() => {
-                              if (confirm("هل أنت متأكد من حذف هذا الطالب؟")) {
-                                deleteStudent.mutate(student.id);
-                              }
-                            }}
-                          >
+                          <Button size="icon" variant="ghost" className="text-destructive"
+                            onClick={() => { if (confirm("هل أنت متأكد من حذف هذا الطالب؟")) deleteStudent.mutate(student.id); }}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
