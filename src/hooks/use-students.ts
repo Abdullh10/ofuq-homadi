@@ -115,6 +115,22 @@ export function useTreatmentPlans() {
   });
 }
 
+export function useStudentTreatmentPlans(studentId: string | undefined) {
+  return useQuery({
+    queryKey: ["treatment-plans", studentId],
+    enabled: !!studentId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("treatment_plans")
+        .select("*")
+        .eq("student_id", studentId!)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
 export function useStudentInterventions(studentId: string | undefined) {
   return useQuery({
     queryKey: ["interventions", studentId],
@@ -226,6 +242,38 @@ export function useAddGrade() {
   });
 }
 
+export function useUpdateGrade() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...data }: { id: string; exam_score?: number; homework_score?: number; participation_score?: number }) => {
+      const { error } = await supabase.from("grades").update(data).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["grades"] });
+      qc.invalidateQueries({ queryKey: ["all-grades"] });
+      toast.success("تم تحديث الدرجة");
+    },
+    onError: () => toast.error("حدث خطأ أثناء تحديث الدرجة"),
+  });
+}
+
+export function useDeleteGrade() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("grades").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["grades"] });
+      qc.invalidateQueries({ queryKey: ["all-grades"] });
+      toast.success("تم حذف الدرجة");
+    },
+    onError: () => toast.error("حدث خطأ"),
+  });
+}
+
 export function useAddBehavior() {
   const qc = useQueryClient();
   return useMutation({
@@ -279,6 +327,21 @@ export function useAddTreatmentPlan() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["treatment-plans"] });
       toast.success("تم إنشاء الخطة العلاجية");
+    },
+    onError: () => toast.error("حدث خطأ"),
+  });
+}
+
+export function useUpdateTreatmentPlan() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...data }: TablesUpdate<"treatment_plans"> & { id: string }) => {
+      const { error } = await supabase.from("treatment_plans").update(data).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["treatment-plans"] });
+      toast.success("تم تحديث الخطة");
     },
     onError: () => toast.error("حدث خطأ"),
   });
