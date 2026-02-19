@@ -26,7 +26,7 @@ export function AppSidebar() {
   const location = useLocation();
 
   return (
-    <Sidebar side="right" className="border-r-0" collapsible="icon">
+    <Sidebar side="left" className="border-l-0" collapsible="icon">
       <div className="gradient-sidebar h-full flex flex-col">
         {/* Logo */}
         <div className="p-4 flex items-center gap-3 border-b border-sidebar-border">
