@@ -1,5 +1,6 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useTreatmentPlans, useStudents, useAllGrades, useAllBehaviors, useAddTreatmentPlan, useDeleteTreatmentPlan } from "@/hooks/use-students";
+import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +22,8 @@ export default function Plans() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState("");
   const printRef = useRef<HTMLDivElement>(null);
+  const { session } = useAuth();
+  const isAdmin = !!session;
 
   const classAvg = allGrades.length > 0 ? calculateWeightedAverage(allGrades) : 0;
 
@@ -92,35 +95,37 @@ export default function Plans() {
   return (
     <AppLayout title="الخطط العلاجية">
       <div className="space-y-4">
-        <div className="flex justify-end">
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Sparkles className="h-4 w-4 ml-2" />
-                إنشاء خطة علاجية ذكية
-              </Button>
-            </DialogTrigger>
-            <DialogContent dir="rtl">
-              <DialogHeader>
-                <DialogTitle>إنشاء خطة علاجية ذكية</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 mt-4">
-                <p className="text-sm text-muted-foreground">اختر الطالب وسيقوم النظام بتحليل بياناته وإنشاء خطة علاجية شاملة تلقائياً</p>
-                <Select value={selectedStudentId} onValueChange={setSelectedStudentId}>
-                  <SelectTrigger><SelectValue placeholder="اختر الطالب" /></SelectTrigger>
-                  <SelectContent>
-                    {students.filter(s => s.status !== "archived").map(s => (
-                      <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button onClick={handleGeneratePlan} className="w-full" disabled={!selectedStudentId || addPlan.isPending}>
-                  {addPlan.isPending ? "جارٍ الإنشاء..." : "إنشاء الخطة"}
+        {isAdmin && (
+          <div className="flex justify-end">
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Sparkles className="h-4 w-4 ml-2" />
+                  إنشاء خطة علاجية ذكية
                 </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </div>
+              </DialogTrigger>
+              <DialogContent dir="rtl">
+                <DialogHeader>
+                  <DialogTitle>إنشاء خطة علاجية ذكية</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 mt-4">
+                  <p className="text-sm text-muted-foreground">اختر الطالب وسيقوم النظام بتحليل بياناته وإنشاء خطة علاجية شاملة تلقائياً</p>
+                  <Select value={selectedStudentId} onValueChange={setSelectedStudentId}>
+                    <SelectTrigger><SelectValue placeholder="اختر الطالب" /></SelectTrigger>
+                    <SelectContent>
+                      {students.filter(s => s.status !== "archived").map(s => (
+                        <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button onClick={handleGeneratePlan} className="w-full" disabled={!selectedStudentId || addPlan.isPending}>
+                    {addPlan.isPending ? "جارٍ الإنشاء..." : "إنشاء الخطة"}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+        )}
 
         {plans.length === 0 ? (
           <Card><CardContent className="p-12 text-center text-muted-foreground">
@@ -150,30 +155,32 @@ export default function Plans() {
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handlePrint(plan.id)} title="طباعة / تصدير PDF">
                           <Printer className="h-4 w-4" />
                         </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" title="حذف الخطة">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent dir="rtl">
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>هل أنت متأكد من حذف هذه الخطة؟</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                سيتم حذف الخطة العلاجية للطالب "{studentName}" نهائياً ولا يمكن التراجع.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter className="flex-row-reverse gap-2">
-                              <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                              <AlertDialogAction
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                onClick={() => deletePlan.mutate(plan.id)}
-                              >
-                                حذف
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                        {isAdmin && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" title="حذف الخطة">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent dir="rtl">
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>هل أنت متأكد من حذف هذه الخطة؟</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  سيتم حذف الخطة العلاجية للطالب "{studentName}" نهائياً ولا يمكن التراجع.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter className="flex-row-reverse gap-2">
+                                <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                                <AlertDialogAction
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  onClick={() => deletePlan.mutate(plan.id)}
+                                >
+                                  حذف
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
                       </div>
                     </div>
                     <p className="text-xs text-muted-foreground">
