@@ -1,6 +1,7 @@
-import { LayoutDashboard, Users, AlertTriangle, FileText, BarChart3, FlaskConical } from "lucide-react";
+import { LayoutDashboard, Users, AlertTriangle, FileText, BarChart3, FlaskConical, LogOut } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
+import { useAuth } from "@/hooks/use-auth";
 import {
   Sidebar,
   SidebarContent,
@@ -24,6 +25,7 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
+  const { signOut } = useAuth();
 
   return (
     <Sidebar side="right" className="border-l-0" collapsible="icon">
@@ -69,13 +71,15 @@ export function AppSidebar() {
         </SidebarContent>
 
         {/* Footer */}
-        {!collapsed && (
-          <div className="p-4 border-t border-sidebar-border mt-auto">
-            <p className="text-[10px] text-sidebar-foreground/40 text-center">
-              Abdullah Hamdi – Chemistry Educator
-            </p>
-          </div>
-        )}
+        <div className="p-4 border-t border-sidebar-border mt-auto">
+          <button
+            onClick={signOut}
+            className="flex items-center gap-2 w-full text-sidebar-foreground/70 hover:text-destructive transition-colors text-sm"
+          >
+            <LogOut className="h-4 w-4" />
+            {!collapsed && <span>تسجيل الخروج</span>}
+          </button>
+        </div>
       </div>
     </Sidebar>
   );
