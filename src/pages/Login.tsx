@@ -6,12 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
-import { LogIn, UserPlus } from "lucide-react";
+import { LogIn } from "lucide-react";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -19,24 +18,11 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
 
-    if (isSignUp) {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { emailRedirectTo: window.location.origin },
-      });
-      if (error) {
-        toast.error(error.message);
-      } else {
-        toast.success("تم إنشاء الحساب! تحقق من بريدك الإلكتروني لتأكيد الحساب.");
-      }
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      toast.error("بيانات الدخول غير صحيحة");
     } else {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) {
-        toast.error("بيانات الدخول غير صحيحة");
-      } else {
-        navigate("/");
-      }
+      navigate("/");
     }
     setLoading(false);
   };
@@ -48,9 +34,7 @@ export default function Login() {
           <CardTitle className="text-2xl font-bold text-primary">
             نظام متابعة الطلاب
           </CardTitle>
-          <CardDescription>
-            {isSignUp ? "إنشاء حساب جديد" : "تسجيل الدخول"}
-          </CardDescription>
+          <CardDescription>تسجيل الدخول</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -78,22 +62,11 @@ export default function Login() {
               />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "جارٍ المعالجة..." : isSignUp ? (
-                <><UserPlus className="h-4 w-4 ml-2" />إنشاء حساب</>
-              ) : (
+              {loading ? "جارٍ المعالجة..." : (
                 <><LogIn className="h-4 w-4 ml-2" />تسجيل الدخول</>
               )}
             </Button>
           </form>
-          <div className="mt-4 text-center">
-            <button
-              type="button"
-              onClick={() => setIsSignUp(!isSignUp)}
-              className="text-sm text-primary hover:underline"
-            >
-              {isSignUp ? "لديك حساب؟ سجل الدخول" : "ليس لديك حساب؟ أنشئ حساباً"}
-            </button>
-          </div>
         </CardContent>
       </Card>
     </div>
