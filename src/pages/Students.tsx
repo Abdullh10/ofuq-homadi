@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useStudents, useAllGrades, useAllBehaviors, useDeleteStudent, useUpdateStudent } from "@/hooks/use-students";
+import { useAuth } from "@/hooks/use-auth";
 import { AddStudentDialog } from "@/components/students/AddStudentDialog";
 import { EditStudentDialog } from "@/components/students/EditStudentDialog";
 import { StudentRiskBadge } from "@/components/students/StudentRiskBadge";
@@ -20,6 +21,8 @@ export default function Students() {
   const { data: allBehaviors = [] } = useAllBehaviors();
   const deleteStudent = useDeleteStudent();
   const updateStudent = useUpdateStudent();
+  const { session } = useAuth();
+  const isAdmin = !!session;
 
   const [search, setSearch] = useState("");
   const [gradeFilter, setGradeFilter] = useState("all");
@@ -92,7 +95,7 @@ export default function Students() {
                   <SelectItem value="monitored">تحت المراقبة</SelectItem>
                 </SelectContent>
               </Select>
-              <AddStudentDialog />
+              {isAdmin && <AddStudentDialog />}
             </div>
           </CardContent>
         </Card>
@@ -142,14 +145,18 @@ export default function Students() {
                             <Button size="icon" variant="ghost"><Eye className="h-4 w-4" /></Button>
                           </Link>
                           <EditStudentDialog student={student} />
-                          <Button size="icon" variant="ghost"
-                            onClick={() => updateStudent.mutate({ id: student.id, status: "archived" })}>
-                            <Archive className="h-4 w-4" />
-                          </Button>
-                          <Button size="icon" variant="ghost" className="text-destructive"
-                            onClick={() => { if (confirm("هل أنت متأكد من حذف هذا الطالب؟")) deleteStudent.mutate(student.id); }}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          {isAdmin && (
+                            <>
+                              <Button size="icon" variant="ghost"
+                                onClick={() => updateStudent.mutate({ id: student.id, status: "archived" })}>
+                                <Archive className="h-4 w-4" />
+                              </Button>
+                              <Button size="icon" variant="ghost" className="text-destructive"
+                                onClick={() => { if (confirm("هل أنت متأكد من حذف هذا الطالب؟")) deleteStudent.mutate(student.id); }}>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
