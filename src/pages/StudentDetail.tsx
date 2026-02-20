@@ -41,7 +41,7 @@ export default function StudentDetail() {
 
   // Inline editing state
   const [editingGradeId, setEditingGradeId] = useState<string | null>(null);
-  const [editValues, setEditValues] = useState({ exam: 0, homework: 0, participation: 0 });
+  const [editValues, setEditValues] = useState({ exam: 0, homework: 0, participation: 0, classInteraction: 0, project: 0, practical: 0 });
 
   // Intervention dialog
   const [intDialog, setIntDialog] = useState(false);
@@ -64,17 +64,27 @@ export default function StudentDetail() {
     اختبار: g.exam_score ?? 0,
     واجبات: g.homework_score ?? 0,
     مشاركة: g.participation_score ?? 0,
+    "تفاعل صفي": (g as any).class_interaction_score ?? 0,
+    مشروع: (g as any).project_score ?? 0,
+    عملي: (g as any).practical_score ?? 0,
   }));
 
   const startEdit = (g: typeof grades[0]) => {
     setEditingGradeId(g.id);
-    setEditValues({ exam: g.exam_score ?? 0, homework: g.homework_score ?? 0, participation: g.participation_score ?? 0 });
+    setEditValues({
+      exam: g.exam_score ?? 0,
+      homework: g.homework_score ?? 0,
+      participation: g.participation_score ?? 0,
+      classInteraction: (g as any).class_interaction_score ?? 0,
+      project: (g as any).project_score ?? 0,
+      practical: (g as any).practical_score ?? 0,
+    });
   };
 
   const saveEdit = () => {
     if (!editingGradeId) return;
     updateGrade.mutate(
-      { id: editingGradeId, exam_score: editValues.exam, homework_score: editValues.homework, participation_score: editValues.participation },
+      { id: editingGradeId, exam_score: editValues.exam, homework_score: editValues.homework, participation_score: editValues.participation, class_interaction_score: editValues.classInteraction, project_score: editValues.project, practical_score: editValues.practical } as any,
       { onSuccess: () => setEditingGradeId(null) }
     );
   };
@@ -212,6 +222,9 @@ export default function StudentDetail() {
                     <Line type="monotone" dataKey="اختبار" stroke="#1e40af" strokeWidth={2} />
                     <Line type="monotone" dataKey="واجبات" stroke="#16a34a" strokeWidth={2} />
                     <Line type="monotone" dataKey="مشاركة" stroke="#d97706" strokeWidth={2} />
+                    <Line type="monotone" dataKey="تفاعل صفي" stroke="#7c3aed" strokeWidth={2} />
+                    <Line type="monotone" dataKey="مشروع" stroke="#dc2626" strokeWidth={2} />
+                    <Line type="monotone" dataKey="عملي" stroke="#0891b2" strokeWidth={2} />
                   </LineChart>
                 </ResponsiveContainer>
               ) : (
@@ -241,9 +254,13 @@ export default function StudentDetail() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>الأسبوع</TableHead>
-                      <TableHead>الاختبار</TableHead>
-                      <TableHead>الواجبات</TableHead>
-                      <TableHead>المشاركة</TableHead>
+                      <TableHead>الاختبار /15</TableHead>
+                      <TableHead>الواجبات /10</TableHead>
+                      <TableHead>المشاركة /10</TableHead>
+                      <TableHead>التفاعل /10</TableHead>
+                      <TableHead>المشروع /10</TableHead>
+                      <TableHead>العملي /5</TableHead>
+                      <TableHead>المجموع /60</TableHead>
                       <TableHead>إجراءات</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -253,29 +270,17 @@ export default function StudentDetail() {
                         <TableCell className="font-medium">أسبوع {g.week_number}</TableCell>
                         {editingGradeId === g.id ? (
                           <>
-                            <TableCell>
-                              <Input type="number" min={0} max={100} value={editValues.exam}
-                                onChange={e => setEditValues(v => ({ ...v, exam: +e.target.value }))}
-                                className="w-20 h-8" />
-                            </TableCell>
-                            <TableCell>
-                              <Input type="number" min={0} max={100} value={editValues.homework}
-                                onChange={e => setEditValues(v => ({ ...v, homework: +e.target.value }))}
-                                className="w-20 h-8" />
-                            </TableCell>
-                            <TableCell>
-                              <Input type="number" min={0} max={100} value={editValues.participation}
-                                onChange={e => setEditValues(v => ({ ...v, participation: +e.target.value }))}
-                                className="w-20 h-8" />
-                            </TableCell>
+                            <TableCell><Input type="number" min={0} max={15} value={editValues.exam} onChange={e => setEditValues(v => ({ ...v, exam: +e.target.value }))} className="w-16 h-8" /></TableCell>
+                            <TableCell><Input type="number" min={0} max={10} value={editValues.homework} onChange={e => setEditValues(v => ({ ...v, homework: +e.target.value }))} className="w-16 h-8" /></TableCell>
+                            <TableCell><Input type="number" min={0} max={10} value={editValues.participation} onChange={e => setEditValues(v => ({ ...v, participation: +e.target.value }))} className="w-16 h-8" /></TableCell>
+                            <TableCell><Input type="number" min={0} max={10} value={editValues.classInteraction} onChange={e => setEditValues(v => ({ ...v, classInteraction: +e.target.value }))} className="w-16 h-8" /></TableCell>
+                            <TableCell><Input type="number" min={0} max={10} value={editValues.project} onChange={e => setEditValues(v => ({ ...v, project: +e.target.value }))} className="w-16 h-8" /></TableCell>
+                            <TableCell><Input type="number" min={0} max={5} value={editValues.practical} onChange={e => setEditValues(v => ({ ...v, practical: +e.target.value }))} className="w-16 h-8" /></TableCell>
+                            <TableCell className="font-bold">{editValues.exam + editValues.homework + editValues.participation + editValues.classInteraction + editValues.project + editValues.practical}</TableCell>
                             <TableCell>
                               <div className="flex gap-1">
-                                <Button size="icon" variant="ghost" onClick={saveEdit} disabled={updateGrade.isPending}>
-                                  <Save className="h-4 w-4 text-success" />
-                                </Button>
-                                <Button size="icon" variant="ghost" onClick={() => setEditingGradeId(null)}>
-                                  <X className="h-4 w-4" />
-                                </Button>
+                                <Button size="icon" variant="ghost" onClick={saveEdit} disabled={updateGrade.isPending}><Save className="h-4 w-4 text-success" /></Button>
+                                <Button size="icon" variant="ghost" onClick={() => setEditingGradeId(null)}><X className="h-4 w-4" /></Button>
                               </div>
                             </TableCell>
                           </>
@@ -284,15 +289,16 @@ export default function StudentDetail() {
                             <TableCell>{g.exam_score ?? 0}</TableCell>
                             <TableCell>{g.homework_score ?? 0}</TableCell>
                             <TableCell>{g.participation_score ?? 0}</TableCell>
+                            <TableCell>{(g as any).class_interaction_score ?? 0}</TableCell>
+                            <TableCell>{(g as any).project_score ?? 0}</TableCell>
+                            <TableCell>{(g as any).practical_score ?? 0}</TableCell>
+                            <TableCell className="font-bold">
+                              {(g.exam_score ?? 0) + (g.homework_score ?? 0) + (g.participation_score ?? 0) + ((g as any).class_interaction_score ?? 0) + ((g as any).project_score ?? 0) + ((g as any).practical_score ?? 0)}
+                            </TableCell>
                             <TableCell>
                               <div className="flex gap-1">
-                                <Button size="icon" variant="ghost" onClick={() => startEdit(g)}>
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                                <Button size="icon" variant="ghost" className="text-destructive"
-                                  onClick={() => { if (confirm("حذف هذه الدرجة؟")) deleteGrade.mutate(g.id); }}>
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
+                                <Button size="icon" variant="ghost" onClick={() => startEdit(g)}><Pencil className="h-4 w-4" /></Button>
+                                <Button size="icon" variant="ghost" className="text-destructive" onClick={() => { if (confirm("حذف هذه الدرجة؟")) deleteGrade.mutate(g.id); }}><Trash2 className="h-4 w-4" /></Button>
                               </div>
                             </TableCell>
                           </>
@@ -301,7 +307,7 @@ export default function StudentDetail() {
                     ))}
                     {grades.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center text-muted-foreground py-6">لا توجد درجات</TableCell>
+                        <TableCell colSpan={9} className="text-center text-muted-foreground py-6">لا توجد درجات</TableCell>
                       </TableRow>
                     )}
                   </TableBody>

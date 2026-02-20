@@ -245,7 +245,7 @@ export function useAddGrade() {
 export function useUpdateGrade() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...data }: { id: string; exam_score?: number; homework_score?: number; participation_score?: number }) => {
+    mutationFn: async ({ id, ...data }: { id: string; exam_score?: number; homework_score?: number; participation_score?: number; class_interaction_score?: number; project_score?: number; practical_score?: number }) => {
       const { error } = await supabase.from("grades").update(data).eq("id", id);
       if (error) throw error;
     },
