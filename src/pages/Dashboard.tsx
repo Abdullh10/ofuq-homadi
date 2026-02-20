@@ -5,6 +5,7 @@ import { WeeklyPerformanceChart } from "@/components/dashboard/WeeklyPerformance
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useStudents, useAllGrades, useAllBehaviors, useAlerts } from "@/hooks/use-students";
 import { analyzeStudent, calculateWeightedAverage, type RiskLevel, getRiskLevelInfo } from "@/lib/analysis-engine";
+import { useAutoAlerts } from "@/hooks/use-auto-alerts";
 import { Users, TrendingUp, AlertTriangle, Heart, Trophy, ShieldAlert } from "lucide-react";
 import { StudentRiskBadge } from "@/components/students/StudentRiskBadge";
 import { Link } from "react-router-dom";
@@ -16,6 +17,9 @@ export default function Dashboard() {
   const { data: alerts = [] } = useAlerts();
 
   const activeStudents = students.filter(s => s.status !== "archived");
+
+  // Auto-generate alerts for students needing intervention
+  useAutoAlerts(activeStudents, allGrades, allBehaviors);
 
   // Calculate class average
   const classAvg = allGrades.length > 0 ? calculateWeightedAverage(allGrades) : 0;
