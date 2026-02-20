@@ -10,6 +10,7 @@ import { analyzeStudent, calculateWeightedAverage, getRiskLevelInfo, generateTre
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StudentRiskBadge } from "@/components/students/StudentRiskBadge";
 import { AddGradeDialog } from "@/components/students/AddGradeDialog";
+import { GradeExcelUpload } from "@/components/students/GradeExcelUpload";
 import { AddBehaviorDialog } from "@/components/students/AddBehaviorDialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
@@ -207,7 +208,10 @@ export default function StudentDetail() {
         <Card>
           <CardHeader className="pb-2 flex flex-row items-center justify-between">
             <CardTitle className="text-base">تطور الأداء</CardTitle>
-            <AddGradeDialog studentId={student.id} />
+            <div className="flex gap-2">
+              <GradeExcelUpload studentId={student.id} studentName={student.name} />
+              <AddGradeDialog studentId={student.id} />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="h-[250px]">
