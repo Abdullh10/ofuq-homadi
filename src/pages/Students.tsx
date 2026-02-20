@@ -4,6 +4,7 @@ import { useStudents, useAllGrades, useAllBehaviors, useDeleteStudent, useUpdate
 import { useAuth } from "@/hooks/use-auth";
 import { AddStudentDialog } from "@/components/students/AddStudentDialog";
 import { EditStudentDialog } from "@/components/students/EditStudentDialog";
+import { BulkGradeExcelUpload } from "@/components/students/BulkGradeExcelUpload";
 import { StudentRiskBadge } from "@/components/students/StudentRiskBadge";
 import { analyzeStudent, calculateWeightedAverage } from "@/lib/analysis-engine";
 import { Card, CardContent } from "@/components/ui/card";
@@ -95,7 +96,12 @@ export default function Students() {
                   <SelectItem value="monitored">تحت المراقبة</SelectItem>
                 </SelectContent>
               </Select>
-              {isAdmin && <AddStudentDialog />}
+              {isAdmin && (
+                <div className="flex gap-2">
+                  <BulkGradeExcelUpload students={students.filter(s => s.status === "active")} />
+                  <AddStudentDialog />
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
