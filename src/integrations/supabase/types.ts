@@ -116,32 +116,41 @@ export type Database = {
       }
       grades: {
         Row: {
+          class_interaction_score: number | null
           created_at: string
           exam_score: number | null
           homework_score: number | null
           id: string
           notes: string | null
           participation_score: number | null
+          practical_score: number | null
+          project_score: number | null
           student_id: string
           week_number: number
         }
         Insert: {
+          class_interaction_score?: number | null
           created_at?: string
           exam_score?: number | null
           homework_score?: number | null
           id?: string
           notes?: string | null
           participation_score?: number | null
+          practical_score?: number | null
+          project_score?: number | null
           student_id: string
           week_number: number
         }
         Update: {
+          class_interaction_score?: number | null
           created_at?: string
           exam_score?: number | null
           homework_score?: number | null
           id?: string
           notes?: string | null
           participation_score?: number | null
+          practical_score?: number | null
+          project_score?: number | null
           student_id?: string
           week_number?: number
         }

@@ -18,19 +18,34 @@ export interface StudentAnalysis {
   classComparison: number;
 }
 
+// الدرجات القصوى: اختبار=15، واجبات=10، مشاركة=10، تفاعل صفي=10، مشروع=10، عملي=5 (المجموع=60)
+export const MAX_SCORES = {
+  exam: 15,
+  homework: 10,
+  participation: 10,
+  class_interaction: 10,
+  project: 10,
+  practical: 5,
+};
+export const TOTAL_MAX = Object.values(MAX_SCORES).reduce((a, b) => a + b, 0); // 60
+
 export function calculateWeightedAverage(grades: Grade[]): number {
   if (!grades.length) return 0;
-  const weights = { exam: 0.5, homework: 0.3, participation: 0.2 };
-  let totalWeighted = 0;
+  let totalScore = 0;
   let count = 0;
   for (const g of grades) {
-    const exam = g.exam_score ?? 0;
-    const hw = g.homework_score ?? 0;
-    const part = g.participation_score ?? 0;
-    totalWeighted += exam * weights.exam + hw * weights.homework + part * weights.participation;
+    const score =
+      (g.exam_score ?? 0) +
+      (g.homework_score ?? 0) +
+      (g.participation_score ?? 0) +
+      ((g as any).class_interaction_score ?? 0) +
+      ((g as any).project_score ?? 0) +
+      ((g as any).practical_score ?? 0);
+    totalScore += score;
     count++;
   }
-  return count ? totalWeighted / count : 0;
+  // Convert to percentage out of 60
+  return count ? (totalScore / count / TOTAL_MAX) * 100 : 0;
 }
 
 export function analyzeTrend(grades: Grade[]): { trend: "up" | "down" | "stable"; percentage: number } {
@@ -39,7 +54,11 @@ export function analyzeTrend(grades: Grade[]): { trend: "up" | "down" | "stable"
   const recent = sorted.slice(-3);
   if (recent.length < 2) return { trend: "stable", percentage: 0 };
 
-  const avgScore = (g: Grade) => ((g.exam_score ?? 0) + (g.homework_score ?? 0) + (g.participation_score ?? 0)) / 3;
+  const avgScore = (g: Grade) => {
+    const total = (g.exam_score ?? 0) + (g.homework_score ?? 0) + (g.participation_score ?? 0) +
+      ((g as any).class_interaction_score ?? 0) + ((g as any).project_score ?? 0) + ((g as any).practical_score ?? 0);
+    return (total / TOTAL_MAX) * 100;
+  };
   const first = avgScore(recent[0]);
   const last = avgScore(recent[recent.length - 1]);
   const diff = last - first;
@@ -72,7 +91,11 @@ export function calculateBehavioralRisk(behaviors: Behavior[]): number {
 
 export function calculateStabilityScore(grades: Grade[]): number {
   if (grades.length < 2) return 50;
-  const scores = grades.map(g => ((g.exam_score ?? 0) + (g.homework_score ?? 0) + (g.participation_score ?? 0)) / 3);
+  const scores = grades.map(g => {
+    const total = (g.exam_score ?? 0) + (g.homework_score ?? 0) + (g.participation_score ?? 0) +
+      ((g as any).class_interaction_score ?? 0) + ((g as any).project_score ?? 0) + ((g as any).practical_score ?? 0);
+    return (total / TOTAL_MAX) * 100;
+  });
   const mean = scores.reduce((a, b) => a + b, 0) / scores.length;
   const variance = scores.reduce((sum, s) => sum + Math.pow(s - mean, 2), 0) / scores.length;
   const stdDev = Math.sqrt(variance);
