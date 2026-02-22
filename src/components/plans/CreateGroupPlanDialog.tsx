@@ -9,7 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Users, Sparkles } from "lucide-react";
 import { useStudents, useAllGrades, useAllBehaviors, useAddTreatmentPlan } from "@/hooks/use-students";
 import { analyzeStudent, calculateWeightedAverage, generateTreatmentPlan } from "@/lib/analysis-engine";
-import type { Tables } from "@/integrations/supabase/types";
+import { SuggestionChips } from "./SuggestionChips";
+import { ACADEMIC_SUGGESTIONS, BEHAVIORAL_SUGGESTIONS, COUNSELOR_SUGGESTIONS, PARENT_SUGGESTIONS } from "./plan-suggestions";
 
 export function CreateGroupPlanDialog() {
   const { data: students = [] } = useStudents();
@@ -22,12 +23,12 @@ export function CreateGroupPlanDialog() {
   const [mode, setMode] = useState<"auto" | "manual">("auto");
   const [manualData, setManualData] = useState({
     case_analysis: "",
-    counselor_role: "",
-    parent_role: "",
     duration_weeks: 4,
     target_improvement: 15,
-    academic_items: [""],
-    behavioral_items: [""],
+    academic_items: [] as string[],
+    behavioral_items: [] as string[],
+    counselor_items: [] as string[],
+    parent_items: [] as string[],
   });
 
   const activeStudents = students.filter(s => s.status !== "archived");
@@ -47,11 +48,22 @@ export function CreateGroupPlanDialog() {
     setSelectedIds(atRiskIds);
   };
 
+  const updateListItem = (key: keyof typeof manualData, idx: number, val: string) => {
+    const arr = [...(manualData[key] as string[])];
+    arr[idx] = val;
+    setManualData({ ...manualData, [key]: arr });
+  };
+  const removeListItem = (key: keyof typeof manualData, idx: number) => {
+    setManualData({ ...manualData, [key]: (manualData[key] as string[]).filter((_, i) => i !== idx) });
+  };
+  const addListItem = (key: keyof typeof manualData, val = "") => {
+    setManualData({ ...manualData, [key]: [...(manualData[key] as string[]), val] });
+  };
+
   const handleGenerate = async () => {
     if (selectedIds.length === 0) return;
 
     if (mode === "auto") {
-      // Generate a shared plan based on the average analysis of selected students
       const names = selectedIds.map(id => students.find(s => s.id === id)?.name ?? "").filter(Boolean);
       const analyses = selectedIds.map(id => {
         const student = students.find(s => s.id === id)!;
@@ -59,8 +71,6 @@ export function CreateGroupPlanDialog() {
         const behaviors = allBehaviors.filter(b => b.student_id === id);
         return analyzeStudent(student, grades, behaviors, classAvg);
       });
-
-      // Average analysis
       const avgAnalysis = {
         ...analyses[0],
         weightedAverage: analyses.reduce((s, a) => s + a.weightedAverage, 0) / analyses.length,
@@ -69,43 +79,50 @@ export function CreateGroupPlanDialog() {
         stabilityScore: analyses.reduce((s, a) => s + a.stabilityScore, 0) / analyses.length,
         classComparison: analyses.reduce((s, a) => s + a.classComparison, 0) / analyses.length,
       };
-
       const plan = generateTreatmentPlan(avgAnalysis, `مجموعة (${names.length} طلاب: ${names.slice(0, 3).join("، ")}${names.length > 3 ? "..." : ""})`);
-
       addPlan.mutate({
         student_id: selectedIds[0],
         plan_type: "group" as any,
         target_student_ids: selectedIds as any,
-        case_analysis: plan.case_analysis,
-        academic_plan: plan.academic_plan,
-        behavioral_plan: plan.behavioral_plan,
-        counselor_role: plan.counselor_role,
-        parent_role: plan.parent_role,
-        success_indicators: plan.success_indicators,
-        target_improvement: plan.target_improvement,
-        duration_weeks: plan.duration_weeks,
+        ...plan,
       }, { onSuccess: () => { setOpen(false); setSelectedIds([]); } });
     } else {
-      // Manual
-      const academicPlan: Record<string, string> = {};
-      manualData.academic_items.filter(Boolean).forEach((v, i) => { academicPlan[`item_${i}`] = v; });
-      const behavioralPlan: Record<string, string> = {};
-      manualData.behavioral_items.filter(Boolean).forEach((v, i) => { behavioralPlan[`item_${i}`] = v; });
-
+      const toObj = (arr: string[]) => {
+        const o: Record<string, string> = {};
+        arr.filter(Boolean).forEach((v, i) => { o[`item_${i}`] = v; });
+        return o;
+      };
       addPlan.mutate({
         student_id: selectedIds[0],
         plan_type: "group" as any,
         target_student_ids: selectedIds as any,
         case_analysis: manualData.case_analysis,
-        academic_plan: academicPlan,
-        behavioral_plan: behavioralPlan,
-        counselor_role: manualData.counselor_role,
-        parent_role: manualData.parent_role,
+        academic_plan: toObj(manualData.academic_items),
+        behavioral_plan: toObj(manualData.behavioral_items),
+        counselor_role: manualData.counselor_items.filter(Boolean).map(i => `• ${i}`).join("\n"),
+        parent_role: manualData.parent_items.filter(Boolean).map(i => `• ${i}`).join("\n"),
         duration_weeks: manualData.duration_weeks,
         target_improvement: manualData.target_improvement,
       }, { onSuccess: () => { setOpen(false); setSelectedIds([]); } });
     }
   };
+
+  const renderManualSection = (
+    label: string, key: "academic_items" | "behavioral_items" | "counselor_items" | "parent_items",
+    suggestions: string[]
+  ) => (
+    <div className="space-y-2">
+      <Label className="font-semibold">{label}</Label>
+      {(manualData[key] as string[]).map((item, i) => (
+        <div key={i} className="flex gap-2">
+          <Input value={item} onChange={e => updateListItem(key, i, e.target.value)} className="flex-1" />
+          <Button variant="ghost" size="icon" className="text-destructive" onClick={() => removeListItem(key, i)}>✕</Button>
+        </div>
+      ))}
+      <Button variant="outline" size="sm" onClick={() => addListItem(key)}>+ بند يدوي</Button>
+      <SuggestionChips suggestions={suggestions} selectedItems={manualData[key] as string[]} onAdd={(s) => addListItem(key, s)} />
+    </div>
+  );
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -136,7 +153,6 @@ export function CreateGroupPlanDialog() {
             </div>
           </div>
 
-          {/* Mode selection */}
           <div className="flex gap-2">
             <Button variant={mode === "auto" ? "default" : "outline"} size="sm" onClick={() => setMode("auto")}>
               <Sparkles className="h-3.5 w-3.5 ml-1" /> ذكية (تلقائي)
@@ -156,42 +172,10 @@ export function CreateGroupPlanDialog() {
                 <Label>تحليل الحالة</Label>
                 <Textarea value={manualData.case_analysis} onChange={e => setManualData({ ...manualData, case_analysis: e.target.value })} rows={3} />
               </div>
-              <div className="space-y-2">
-                <Label>الخطة الأكاديمية</Label>
-                {manualData.academic_items.map((item, i) => (
-                  <div key={i} className="flex gap-2">
-                    <Input value={item} onChange={e => {
-                      const copy = [...manualData.academic_items];
-                      copy[i] = e.target.value;
-                      setManualData({ ...manualData, academic_items: copy });
-                    }} className="flex-1" />
-                    <Button variant="ghost" size="icon" className="text-destructive" onClick={() => setManualData({ ...manualData, academic_items: manualData.academic_items.filter((_, j) => j !== i) })}>✕</Button>
-                  </div>
-                ))}
-                <Button variant="outline" size="sm" onClick={() => setManualData({ ...manualData, academic_items: [...manualData.academic_items, ""] })}>+ بند</Button>
-              </div>
-              <div className="space-y-2">
-                <Label>الخطة السلوكية</Label>
-                {manualData.behavioral_items.map((item, i) => (
-                  <div key={i} className="flex gap-2">
-                    <Input value={item} onChange={e => {
-                      const copy = [...manualData.behavioral_items];
-                      copy[i] = e.target.value;
-                      setManualData({ ...manualData, behavioral_items: copy });
-                    }} className="flex-1" />
-                    <Button variant="ghost" size="icon" className="text-destructive" onClick={() => setManualData({ ...manualData, behavioral_items: manualData.behavioral_items.filter((_, j) => j !== i) })}>✕</Button>
-                  </div>
-                ))}
-                <Button variant="outline" size="sm" onClick={() => setManualData({ ...manualData, behavioral_items: [...manualData.behavioral_items, ""] })}>+ بند</Button>
-              </div>
-              <div className="space-y-1.5">
-                <Label>دور المرشد</Label>
-                <Textarea value={manualData.counselor_role} onChange={e => setManualData({ ...manualData, counselor_role: e.target.value })} rows={2} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>دور ولي الأمر</Label>
-                <Textarea value={manualData.parent_role} onChange={e => setManualData({ ...manualData, parent_role: e.target.value })} rows={2} />
-              </div>
+              {renderManualSection("📚 الخطة الأكاديمية", "academic_items", ACADEMIC_SUGGESTIONS)}
+              {renderManualSection("🎯 الخطة السلوكية", "behavioral_items", BEHAVIORAL_SUGGESTIONS)}
+              {renderManualSection("👨‍⚕️ دور المرشد", "counselor_items", COUNSELOR_SUGGESTIONS)}
+              {renderManualSection("👨‍👩‍👦 دور ولي الأمر", "parent_items", PARENT_SUGGESTIONS)}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <Label>المدة (أسابيع)</Label>
