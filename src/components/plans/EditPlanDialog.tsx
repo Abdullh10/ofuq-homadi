@@ -1,0 +1,137 @@
+import { useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { useUpdateTreatmentPlan } from "@/hooks/use-students";
+import type { Tables } from "@/integrations/supabase/types";
+
+interface EditPlanDialogProps {
+  plan: Tables<"treatment_plans"> & { students?: { name: string } | null };
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export function EditPlanDialog({ plan, open, onOpenChange }: EditPlanDialogProps) {
+  const updatePlan = useUpdateTreatmentPlan();
+  const [caseAnalysis, setCaseAnalysis] = useState(plan.case_analysis ?? "");
+  const [counselorRole, setCounselorRole] = useState(plan.counselor_role ?? "");
+  const [parentRole, setParentRole] = useState(plan.parent_role ?? "");
+  const [durationWeeks, setDurationWeeks] = useState(plan.duration_weeks ?? 4);
+  const [targetImprovement, setTargetImprovement] = useState(plan.target_improvement ?? 15);
+
+  const academic = (plan.academic_plan as Record<string, string> | null) ?? {};
+  const behavioral = (plan.behavioral_plan as Record<string, string> | null) ?? {};
+
+  const [academicItems, setAcademicItems] = useState<string[]>(Object.values(academic));
+  const [behavioralItems, setBehavioralItems] = useState<string[]>(Object.values(behavioral));
+
+  useEffect(() => {
+    setCaseAnalysis(plan.case_analysis ?? "");
+    setCounselorRole(plan.counselor_role ?? "");
+    setParentRole(plan.parent_role ?? "");
+    setDurationWeeks(plan.duration_weeks ?? 4);
+    setTargetImprovement(plan.target_improvement ?? 15);
+    setAcademicItems(Object.values((plan.academic_plan as Record<string, string> | null) ?? {}));
+    setBehavioralItems(Object.values((plan.behavioral_plan as Record<string, string> | null) ?? {}));
+  }, [plan]);
+
+  const updateItem = (arr: string[], setArr: (v: string[]) => void, idx: number, val: string) => {
+    const copy = [...arr];
+    copy[idx] = val;
+    setArr(copy);
+  };
+
+  const removeItem = (arr: string[], setArr: (v: string[]) => void, idx: number) => {
+    setArr(arr.filter((_, i) => i !== idx));
+  };
+
+  const handleSave = () => {
+    const academicPlan: Record<string, string> = {};
+    academicItems.filter(Boolean).forEach((v, i) => { academicPlan[`item_${i}`] = v; });
+
+    const behavioralPlan: Record<string, string> = {};
+    behavioralItems.filter(Boolean).forEach((v, i) => { behavioralPlan[`item_${i}`] = v; });
+
+    updatePlan.mutate({
+      id: plan.id,
+      case_analysis: caseAnalysis,
+      counselor_role: counselorRole,
+      parent_role: parentRole,
+      duration_weeks: durationWeeks,
+      target_improvement: targetImprovement,
+      academic_plan: academicPlan,
+      behavioral_plan: behavioralPlan,
+    }, {
+      onSuccess: () => onOpenChange(false),
+    });
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent dir="rtl" className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>تعديل الخطة العلاجية — {(plan as any).students?.name ?? "طالب"}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-5 mt-2">
+          {/* Case Analysis */}
+          <div className="space-y-1.5">
+            <Label className="font-semibold">📋 تحليل الحالة</Label>
+            <Textarea value={caseAnalysis} onChange={e => setCaseAnalysis(e.target.value)} rows={4} />
+          </div>
+
+          {/* Academic Plan */}
+          <div className="space-y-2">
+            <Label className="font-semibold">📚 الخطة الأكاديمية</Label>
+            {academicItems.map((item, i) => (
+              <div key={i} className="flex gap-2 items-start">
+                <Textarea value={item} onChange={e => updateItem(academicItems, setAcademicItems, i, e.target.value)} rows={2} className="flex-1" />
+                <Button variant="ghost" size="icon" className="text-destructive shrink-0 mt-1" onClick={() => removeItem(academicItems, setAcademicItems, i)}>✕</Button>
+              </div>
+            ))}
+            <Button variant="outline" size="sm" onClick={() => setAcademicItems([...academicItems, ""])}>+ إضافة بند</Button>
+          </div>
+
+          {/* Behavioral Plan */}
+          <div className="space-y-2">
+            <Label className="font-semibold">🎯 الخطة السلوكية</Label>
+            {behavioralItems.map((item, i) => (
+              <div key={i} className="flex gap-2 items-start">
+                <Textarea value={item} onChange={e => updateItem(behavioralItems, setBehavioralItems, i, e.target.value)} rows={2} className="flex-1" />
+                <Button variant="ghost" size="icon" className="text-destructive shrink-0 mt-1" onClick={() => removeItem(behavioralItems, setBehavioralItems, i)}>✕</Button>
+              </div>
+            ))}
+            <Button variant="outline" size="sm" onClick={() => setBehavioralItems([...behavioralItems, ""])}>+ إضافة بند</Button>
+          </div>
+
+          {/* Counselor & Parent Roles */}
+          <div className="space-y-1.5">
+            <Label className="font-semibold">👨‍⚕️ دور المرشد</Label>
+            <Textarea value={counselorRole} onChange={e => setCounselorRole(e.target.value)} rows={3} />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="font-semibold">👨‍👩‍👦 دور ولي الأمر</Label>
+            <Textarea value={parentRole} onChange={e => setParentRole(e.target.value)} rows={3} />
+          </div>
+
+          {/* Duration & Target */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label>المدة (أسابيع)</Label>
+              <Input type="number" min={1} max={24} value={durationWeeks} onChange={e => setDurationWeeks(Number(e.target.value))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>نسبة التحسن المستهدفة %</Label>
+              <Input type="number" min={1} max={100} value={targetImprovement} onChange={e => setTargetImprovement(Number(e.target.value))} />
+            </div>
+          </div>
+
+          <Button onClick={handleSave} className="w-full" disabled={updatePlan.isPending}>
+            {updatePlan.isPending ? "جارٍ الحفظ..." : "حفظ التعديلات"}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}

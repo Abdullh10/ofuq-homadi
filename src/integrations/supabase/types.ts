@@ -283,10 +283,12 @@ export type Database = {
           duration_weeks: number | null
           id: string
           parent_role: string | null
+          plan_type: string
           status: string
           student_id: string
           success_indicators: Json | null
           target_improvement: number | null
+          target_student_ids: string[] | null
           updated_at: string
         }
         Insert: {
@@ -298,10 +300,12 @@ export type Database = {
           duration_weeks?: number | null
           id?: string
           parent_role?: string | null
+          plan_type?: string
           status?: string
           student_id: string
           success_indicators?: Json | null
           target_improvement?: number | null
+          target_student_ids?: string[] | null
           updated_at?: string
         }
         Update: {
@@ -313,10 +317,12 @@ export type Database = {
           duration_weeks?: number | null
           id?: string
           parent_role?: string | null
+          plan_type?: string
           status?: string
           student_id?: string
           success_indicators?: Json | null
           target_improvement?: number | null
+          target_student_ids?: string[] | null
           updated_at?: string
         }
         Relationships: [
