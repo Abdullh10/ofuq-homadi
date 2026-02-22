@@ -2,11 +2,15 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Printer, Trash2, Pencil, Users } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Printer, Trash2, Pencil, Users, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useDeleteTreatmentPlan } from "@/hooks/use-students";
 import { EditPlanDialog } from "./EditPlanDialog";
+import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 
 interface PlanCardProps {
@@ -24,6 +28,9 @@ const statusMap: Record<string, { label: string; variant: "default" | "secondary
 export function PlanCard({ plan, isAdmin, allStudents }: PlanCardProps) {
   const deletePlan = useDeleteTreatmentPlan();
   const [editOpen, setEditOpen] = useState(false);
+  const [emailOpen, setEmailOpen] = useState(false);
+  const [emailTo, setEmailTo] = useState("");
+  const [emailSending, setEmailSending] = useState(false);
 
   const studentName = (plan as any).students?.name ?? "طالب";
   const status = statusMap[plan.status] ?? statusMap.active;
@@ -33,6 +40,44 @@ export function PlanCard({ plan, isAdmin, allStudents }: PlanCardProps) {
   const isGroup = (plan as any).plan_type === "group";
   const targetIds: string[] = (plan as any).target_student_ids ?? [];
   const targetNames = targetIds.map(id => allStudents.find(s => s.id === id)?.name).filter(Boolean);
+
+  const getPlanTitle = () => isGroup ? `خطة علاجية جماعية (${targetNames.join("، ")})` : `الخطة العلاجية - ${studentName}`;
+
+  const buildPlanHtml = () => {
+    let html = `<div class="header"><h2>${getPlanTitle()}</h2><p style="font-size:12px;color:#888;">تاريخ: ${new Date(plan.created_at).toLocaleDateString("ar-SA")} • المدة: ${plan.duration_weeks} أسابيع</p></div>`;
+    if (plan.case_analysis) html += `<div class="section"><h4>📋 تحليل الحالة</h4><p>${plan.case_analysis}</p></div>`;
+    if (academic && Object.keys(academic).length > 0) html += `<div class="section"><h4>📚 الخطة الأكاديمية</h4><ul>${Object.values(academic).map(v => `<li>${v}</li>`).join("")}</ul></div>`;
+    if (behavioral && Object.keys(behavioral).length > 0) html += `<div class="section"><h4>🎯 الخطة السلوكية</h4><ul>${Object.values(behavioral).map(v => `<li>${v}</li>`).join("")}</ul></div>`;
+    if (plan.counselor_role) html += `<div class="section"><h4>👨‍⚕️ دور المرشد</h4><p>${plan.counselor_role.replace(/\n/g, "<br/>")}</p></div>`;
+    if (plan.parent_role) html += `<div class="section"><h4>👨‍👩‍👦 دور ولي الأمر</h4><p>${plan.parent_role.replace(/\n/g, "<br/>")}</p></div>`;
+    if (indicators?.target_average) html += `<div class="section" style="background:#f3f4f6;"><h4>📊 مؤشرات النجاح</h4><p>المعدل المستهدف: ${indicators.target_average}%</p>${plan.target_improvement ? `<p>نسبة التحسن: ${plan.target_improvement}%</p>` : ""}</div>`;
+    return html;
+  };
+
+  const handleSendEmail = async () => {
+    if (!emailTo.trim()) return;
+    setEmailSending(true);
+    try {
+      const planHtml = buildPlanHtml();
+      const subject = getPlanTitle();
+
+      // Build plain text for mailto
+      const plainText = planHtml.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+      const truncated = plainText.substring(0, 1800);
+
+      // Open mailto link
+      const mailto = `mailto:${encodeURIComponent(emailTo.trim())}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(truncated)}`;
+      window.open(mailto, "_blank");
+
+      toast.success("تم فتح تطبيق البريد الإلكتروني لإرسال الخطة");
+      setEmailOpen(false);
+      setEmailTo("");
+    } catch (err) {
+      toast.error("حدث خطأ أثناء إعداد البريد");
+    } finally {
+      setEmailSending(false);
+    }
+  };
 
   const handlePrint = () => {
     const planEl = document.getElementById(`plan-${plan.id}`);
@@ -85,6 +130,9 @@ export function PlanCard({ plan, isAdmin, allStudents }: PlanCardProps) {
               </Button>
               {isAdmin && (
                 <>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEmailOpen(true)} title="إرسال بالبريد">
+                    <Mail className="h-4 w-4" />
+                  </Button>
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditOpen(true)} title="تعديل">
                     <Pencil className="h-4 w-4" />
                   </Button>
@@ -168,19 +216,45 @@ export function PlanCard({ plan, isAdmin, allStudents }: PlanCardProps) {
         {/* Hidden printable content */}
         <div id={`plan-${plan.id}`} className="hidden">
           <div className="header">
-            <h2>{isGroup ? `خطة علاجية جماعية (${targetNames.join("، ")})` : `الخطة العلاجية - ${studentName}`}</h2>
+            <h2>{getPlanTitle()}</h2>
             <p className="meta">تاريخ الإنشاء: {new Date(plan.created_at).toLocaleDateString("ar-SA")} • المدة: {plan.duration_weeks} أسابيع • الحالة: {status.label}</p>
           </div>
           {plan.case_analysis && <div className="section"><h4>📋 تحليل الحالة</h4><p>{plan.case_analysis}</p></div>}
-          {academic && <div className="section"><h4>📚 الخطة الأكاديمية</h4><ul>{Object.values(academic).map((v, i) => `<li>${v}</li>`).join("")}</ul></div>}
-          {behavioral && <div className="section"><h4>🎯 الخطة السلوكية</h4><ul>{Object.values(behavioral).map((v, i) => `<li>${v}</li>`).join("")}</ul></div>}
+          {academic && <div className="section"><h4>📚 الخطة الأكاديمية</h4><ul>{Object.values(academic).map(v => `<li>${v}</li>`).join("")}</ul></div>}
+          {behavioral && <div className="section"><h4>🎯 الخطة السلوكية</h4><ul>{Object.values(behavioral).map(v => `<li>${v}</li>`).join("")}</ul></div>}
           {plan.counselor_role && <div className="section"><h4>👨‍⚕️ دور المرشد</h4><p>{plan.counselor_role}</p></div>}
           {plan.parent_role && <div className="section"><h4>👨‍👩‍👦 دور ولي الأمر</h4><p>{plan.parent_role}</p></div>}
-          {indicators?.target_average && <div className="section indicators"><h4>📊 مؤشرات النجاح</h4><p>المعدل المستهدف: {indicators.target_average}%</p>{plan.target_improvement && <p>نسبة التحسن المستهدفة: {plan.target_improvement}%</p>}</div>}
+          {indicators?.target_average && <div className="section indicators"><h4>📊 مؤشرات النجاح</h4><p>المعدل المستهدف: {indicators.target_average}%</p>{plan.target_improvement && <p>نسبة التحسن: {plan.target_improvement}%</p>}</div>}
         </div>
       </Card>
 
       {isAdmin && <EditPlanDialog plan={plan} open={editOpen} onOpenChange={setEditOpen} />}
+
+      {/* Email Dialog */}
+      <Dialog open={emailOpen} onOpenChange={setEmailOpen}>
+        <DialogContent dir="rtl" className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>إرسال الخطة العلاجية بالبريد</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <p className="text-sm text-muted-foreground">أدخل البريد الإلكتروني للمرشد الطلابي أو ولي الأمر لإرسال الخطة</p>
+            <div className="space-y-1.5">
+              <Label>البريد الإلكتروني</Label>
+              <Input
+                type="email"
+                dir="ltr"
+                placeholder="example@email.com"
+                value={emailTo}
+                onChange={e => setEmailTo(e.target.value)}
+              />
+            </div>
+            <Button onClick={handleSendEmail} className="w-full" disabled={!emailTo.trim() || emailSending}>
+              <Mail className="h-4 w-4 ml-2" />
+              {emailSending ? "جارٍ الإعداد..." : "فتح البريد وإرسال الخطة"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
