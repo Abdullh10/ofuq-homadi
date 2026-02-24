@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, AlertTriangle, FileText, BarChart3, FlaskConical, LogIn, LogOut } from "lucide-react";
+import { LayoutDashboard, Users, AlertTriangle, FileText, BarChart3, FlaskConical, LogIn, LogOut, GraduationCap } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
@@ -20,6 +20,7 @@ const navItems = [
   { title: "الإنذارات", url: "/alerts", icon: AlertTriangle },
   { title: "الخطط العلاجية", url: "/plans", icon: FileText },
   { title: "التقارير", url: "/reports", icon: BarChart3 },
+  { title: "الدعم السريع", url: "/quick-support", icon: GraduationCap },
 ];
 
 export function AppSidebar() {
