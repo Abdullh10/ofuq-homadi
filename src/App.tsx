@@ -12,6 +12,7 @@ import Plans from "./pages/Plans";
 import Reports from "./pages/Reports";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
+import QuickSupport from "./pages/QuickSupport";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +30,7 @@ const App = () => (
             <Route path="/alerts" element={<Alerts />} />
             <Route path="/plans" element={<Plans />} />
             <Route path="/reports" element={<Reports />} />
+            <Route path="/quick-support" element={<QuickSupport />} />
             <Route path="/login" element={<Login />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
