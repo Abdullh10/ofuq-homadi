@@ -91,11 +91,11 @@ export function CreateGroupPlanDialog() {
       const scheduledAt = getScheduledAt();
       addPlan.mutate({
         student_id: selectedIds[0],
-        plan_type: "group" as any,
-        target_student_ids: selectedIds as any,
+        plan_type: "group",
+        target_student_ids: selectedIds,
         ...(scheduledAt ? { scheduled_at: scheduledAt } : {}),
         ...plan,
-      } as any, { onSuccess: () => { setOpen(false); setSelectedIds([]); setUseSchedule(false); setScheduledDate(""); setScheduledTime(""); } });
+      }, { onSuccess: () => { setOpen(false); setSelectedIds([]); setUseSchedule(false); setScheduledDate(""); setScheduledTime(""); } });
     } else {
       const toObj = (arr: string[]) => {
         const o: Record<string, string> = {};
@@ -105,8 +105,8 @@ export function CreateGroupPlanDialog() {
       const scheduledAt = getScheduledAt();
       addPlan.mutate({
         student_id: selectedIds[0],
-        plan_type: "group" as any,
-        target_student_ids: selectedIds as any,
+        plan_type: "group",
+        target_student_ids: selectedIds,
         case_analysis: manualData.case_analysis,
         academic_plan: toObj(manualData.academic_items),
         behavioral_plan: toObj(manualData.behavioral_items),
@@ -115,7 +115,7 @@ export function CreateGroupPlanDialog() {
         duration_weeks: manualData.duration_weeks,
         target_improvement: manualData.target_improvement,
         ...(scheduledAt ? { scheduled_at: scheduledAt } : {}),
-      } as any, { onSuccess: () => { setOpen(false); setSelectedIds([]); setUseSchedule(false); setScheduledDate(""); setScheduledTime(""); } });
+      }, { onSuccess: () => { setOpen(false); setSelectedIds([]); setUseSchedule(false); setScheduledDate(""); setScheduledTime(""); } });
     }
   };
 

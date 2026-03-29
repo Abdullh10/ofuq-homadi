@@ -338,7 +338,7 @@ export function useAddTreatmentPlan() {
 export function useUpdateTreatmentPlan() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...data }: TablesUpdate<"treatment_plans"> & { id: string }) => {
+    mutationFn: async ({ id, ...data }: any) => {
       const { error } = await supabase.from("treatment_plans").update(data).eq("id", id);
       if (error) throw error;
     },
@@ -346,7 +346,10 @@ export function useUpdateTreatmentPlan() {
       qc.invalidateQueries({ queryKey: ["treatment-plans"] });
       toast.success("تم تحديث الخطة");
     },
-    onError: () => toast.error("حدث خطأ"),
+    onError: (err: any) => {
+      console.error("Update plan error:", err);
+      toast.error(err?.message || "حدث خطأ");
+    },
   });
 }
 
