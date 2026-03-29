@@ -284,6 +284,7 @@ export type Database = {
           id: string
           parent_role: string | null
           plan_type: string
+          scheduled_at: string | null
           status: string
           student_id: string
           success_indicators: Json | null
@@ -301,6 +302,7 @@ export type Database = {
           id?: string
           parent_role?: string | null
           plan_type?: string
+          scheduled_at?: string | null
           status?: string
           student_id: string
           success_indicators?: Json | null
@@ -318,6 +320,7 @@ export type Database = {
           id?: string
           parent_role?: string | null
           plan_type?: string
+          scheduled_at?: string | null
           status?: string
           student_id?: string
           success_indicators?: Json | null
