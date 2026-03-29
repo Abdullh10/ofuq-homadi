@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Printer, Trash2, Pencil, Users, Mail } from "lucide-react";
+import { Printer, Trash2, Pencil, Users, Mail, Calendar } from "lucide-react";
 import { Link } from "react-router-dom";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -160,6 +160,12 @@ export function PlanCard({ plan, isAdmin, allStudents }: PlanCardProps) {
           <p className="text-xs text-muted-foreground">
             {new Date(plan.created_at).toLocaleDateString("ar-SA")} • {plan.duration_weeks} أسابيع
           </p>
+          {(plan as any).scheduled_at && (
+            <p className="text-xs text-primary flex items-center gap-1 mt-0.5">
+              <Calendar className="h-3 w-3" />
+              مجدولة: {new Date((plan as any).scheduled_at).toLocaleDateString("ar-SA")} - {new Date((plan as any).scheduled_at).toLocaleTimeString("ar-SA", { hour: "2-digit", minute: "2-digit" })}
+            </p>
+          )}
           {isGroup && targetNames.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-1">
               {targetNames.map((name, i) => (

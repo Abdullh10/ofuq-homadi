@@ -1,0 +1,1 @@
+ALTER TABLE public.treatment_plans ADD COLUMN scheduled_at timestamp with time zone NULL;

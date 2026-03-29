@@ -20,6 +20,9 @@ export function CreateGroupPlanDialog() {
 
   const [open, setOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [useSchedule, setUseSchedule] = useState(false);
+  const [scheduledDate, setScheduledDate] = useState("");
+  const [scheduledTime, setScheduledTime] = useState("");
   const [mode, setMode] = useState<"auto" | "manual">("auto");
   const [manualData, setManualData] = useState({
     case_analysis: "",
@@ -60,6 +63,11 @@ export function CreateGroupPlanDialog() {
     setManualData({ ...manualData, [key]: [...(manualData[key] as string[]), val] });
   };
 
+  const getScheduledAt = () => {
+    if (!useSchedule || !scheduledDate) return null;
+    return new Date(`${scheduledDate}T${scheduledTime || "00:00"}`).toISOString();
+  };
+
   const handleGenerate = async () => {
     if (selectedIds.length === 0) return;
 
@@ -80,18 +88,21 @@ export function CreateGroupPlanDialog() {
         classComparison: analyses.reduce((s, a) => s + a.classComparison, 0) / analyses.length,
       };
       const plan = generateTreatmentPlan(avgAnalysis, `مجموعة (${names.length} طلاب: ${names.slice(0, 3).join("، ")}${names.length > 3 ? "..." : ""})`);
+      const scheduledAt = getScheduledAt();
       addPlan.mutate({
         student_id: selectedIds[0],
         plan_type: "group" as any,
         target_student_ids: selectedIds as any,
+        ...(scheduledAt ? { scheduled_at: scheduledAt } : {}),
         ...plan,
-      }, { onSuccess: () => { setOpen(false); setSelectedIds([]); } });
+      } as any, { onSuccess: () => { setOpen(false); setSelectedIds([]); setUseSchedule(false); setScheduledDate(""); setScheduledTime(""); } });
     } else {
       const toObj = (arr: string[]) => {
         const o: Record<string, string> = {};
         arr.filter(Boolean).forEach((v, i) => { o[`item_${i}`] = v; });
         return o;
       };
+      const scheduledAt = getScheduledAt();
       addPlan.mutate({
         student_id: selectedIds[0],
         plan_type: "group" as any,
@@ -103,7 +114,8 @@ export function CreateGroupPlanDialog() {
         parent_role: manualData.parent_items.filter(Boolean).map(i => `• ${i}`).join("\n"),
         duration_weeks: manualData.duration_weeks,
         target_improvement: manualData.target_improvement,
-      }, { onSuccess: () => { setOpen(false); setSelectedIds([]); } });
+        ...(scheduledAt ? { scheduled_at: scheduledAt } : {}),
+      } as any, { onSuccess: () => { setOpen(false); setSelectedIds([]); setUseSchedule(false); setScheduledDate(""); setScheduledTime(""); } });
     }
   };
 
@@ -188,6 +200,25 @@ export function CreateGroupPlanDialog() {
               </div>
             </div>
           )}
+
+          <div className="space-y-3 border rounded-lg p-3 bg-muted/30">
+            <label className="flex items-center gap-2 cursor-pointer text-sm">
+              <Checkbox checked={useSchedule} onCheckedChange={(v) => setUseSchedule(!!v)} />
+              جدولة الخطة (اختياري)
+            </label>
+            {useSchedule && (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">التاريخ</Label>
+                  <Input type="date" value={scheduledDate} onChange={e => setScheduledDate(e.target.value)} />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">الوقت</Label>
+                  <Input type="time" value={scheduledTime} onChange={e => setScheduledTime(e.target.value)} />
+                </div>
+              </div>
+            )}
+          </div>
 
           <Button onClick={handleGenerate} className="w-full" disabled={selectedIds.length === 0 || addPlan.isPending}>
             {addPlan.isPending ? "جارٍ الإنشاء..." : `إنشاء خطة جماعية (${selectedIds.length} طالب)`}
