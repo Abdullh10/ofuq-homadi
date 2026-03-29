@@ -319,7 +319,7 @@ export function useMarkAlertRead() {
 export function useAddTreatmentPlan() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (plan: TablesInsert<"treatment_plans">) => {
+    mutationFn: async (plan: any) => {
       const { data, error } = await supabase.from("treatment_plans").insert(plan).select().single();
       if (error) throw error;
       return data;
@@ -328,7 +328,10 @@ export function useAddTreatmentPlan() {
       qc.invalidateQueries({ queryKey: ["treatment-plans"] });
       toast.success("تم إنشاء الخطة العلاجية");
     },
-    onError: () => toast.error("حدث خطأ"),
+    onError: (err: any) => {
+      console.error("Treatment plan error:", err);
+      toast.error(err?.message || "حدث خطأ أثناء إنشاء الخطة");
+    },
   });
 }
 
