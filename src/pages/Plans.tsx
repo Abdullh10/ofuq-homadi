@@ -8,6 +8,9 @@ import { analyzeStudent, calculateWeightedAverage, generateTreatmentPlan } from 
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PlanCard } from "@/components/plans/PlanCard";
 import { CreateGroupPlanDialog } from "@/components/plans/CreateGroupPlanDialog";
@@ -20,6 +23,9 @@ export default function Plans() {
   const addPlan = useAddTreatmentPlan();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState("");
+  const [useSchedule, setUseSchedule] = useState(false);
+  const [scheduledDate, setScheduledDate] = useState("");
+  const [scheduledTime, setScheduledTime] = useState("");
   const { session } = useAuth();
   const isAdmin = !!session;
 
@@ -34,6 +40,10 @@ export default function Plans() {
     const analysis = analyzeStudent(student, grades, behaviors, classAvg);
     const plan = generateTreatmentPlan(analysis, student.name);
 
+    const scheduledAt = useSchedule && scheduledDate
+      ? new Date(`${scheduledDate}T${scheduledTime || "00:00"}`).toISOString()
+      : null;
+
     addPlan.mutate({
       student_id: selectedStudentId,
       case_analysis: plan.case_analysis,
@@ -44,8 +54,14 @@ export default function Plans() {
       success_indicators: plan.success_indicators,
       target_improvement: plan.target_improvement,
       duration_weeks: plan.duration_weeks,
-    }, {
-      onSuccess: () => setDialogOpen(false),
+      ...(scheduledAt ? { scheduled_at: scheduledAt } : {}),
+    } as any, {
+      onSuccess: () => {
+        setDialogOpen(false);
+        setUseSchedule(false);
+        setScheduledDate("");
+        setScheduledTime("");
+      },
     });
   };
 
@@ -80,6 +96,24 @@ export default function Plans() {
                       ))}
                     </SelectContent>
                   </Select>
+                  <div className="space-y-3 border rounded-lg p-3 bg-muted/30">
+                    <label className="flex items-center gap-2 cursor-pointer text-sm">
+                      <Checkbox checked={useSchedule} onCheckedChange={(v) => setUseSchedule(!!v)} />
+                      جدولة الخطة (اختياري)
+                    </label>
+                    {useSchedule && (
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <Label className="text-xs">التاريخ</Label>
+                          <Input type="date" value={scheduledDate} onChange={e => setScheduledDate(e.target.value)} />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">الوقت</Label>
+                          <Input type="time" value={scheduledTime} onChange={e => setScheduledTime(e.target.value)} />
+                        </div>
+                      </div>
+                    )}
+                  </div>
                   <Button onClick={handleGeneratePlan} className="w-full" disabled={!selectedStudentId || addPlan.isPending}>
                     {addPlan.isPending ? "جارٍ الإنشاء..." : "إنشاء الخطة"}
                   </Button>
