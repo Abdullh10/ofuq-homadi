@@ -55,7 +55,7 @@ export default function Plans() {
       target_improvement: plan.target_improvement,
       duration_weeks: plan.duration_weeks,
       ...(scheduledAt ? { scheduled_at: scheduledAt } : {}),
-    } as any, {
+    }, {
       onSuccess: () => {
         setDialogOpen(false);
         setUseSchedule(false);
