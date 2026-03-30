@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { POSITIVE_BEHAVIORS, NEGATIVE_BEHAVIORS } from "./behavior-options";
 
 interface Props {
   studentId: string;
@@ -22,18 +23,29 @@ interface BehaviorRow {
   errors: string[];
 }
 
-const HEADERS = ["التاريخ", "النوع (إيجابي / سلبي)", "الوصف"];
+const HEADERS = ["التاريخ", "النوع (إيجابي / سلبي)", "السلوك"];
 
 function downloadTemplate(studentName: string) {
   const wb = XLSX.utils.book_new();
+  const today = new Date().toISOString().split("T")[0];
   const data: any[][] = [HEADERS];
-  // Add sample rows
-  data.push([new Date().toISOString().split("T")[0], "إيجابي", ""]);
-  data.push([new Date().toISOString().split("T")[0], "سلبي", ""]);
+  data.push([today, "إيجابي", POSITIVE_BEHAVIORS[0]]);
+  data.push([today, "سلبي", NEGATIVE_BEHAVIORS[0]]);
 
   const ws = XLSX.utils.aoa_to_sheet(data);
-  ws["!cols"] = [{ wch: 15 }, { wch: 20 }, { wch: 40 }];
+  ws["!cols"] = [{ wch: 15 }, { wch: 20 }, { wch: 30 }];
+
+  // Add a reference sheet with all behavior options
+  const refData: any[][] = [["السلوكيات الإيجابية", "السلوكيات السلبية"]];
+  const maxLen = Math.max(POSITIVE_BEHAVIORS.length, NEGATIVE_BEHAVIORS.length);
+  for (let i = 0; i < maxLen; i++) {
+    refData.push([POSITIVE_BEHAVIORS[i] ?? "", NEGATIVE_BEHAVIORS[i] ?? ""]);
+  }
+  const refWs = XLSX.utils.aoa_to_sheet(refData);
+  refWs["!cols"] = [{ wch: 25 }, { wch: 25 }];
+
   XLSX.utils.book_append_sheet(wb, ws, "سلوك");
+  XLSX.utils.book_append_sheet(wb, refWs, "قائمة السلوكيات");
   XLSX.writeFile(wb, `سلوك_${studentName}.xlsx`);
 }
 
@@ -52,8 +64,16 @@ function validateRow(row: any[]): BehaviorRow {
 
   const parsedType = parseType(typeStr);
   if (!parsedType) errors.push("النوع يجب أن يكون 'إيجابي' أو 'سلبي'");
-  if (!desc) errors.push("الوصف مطلوب");
+  if (!desc) errors.push("السلوك مطلوب");
   if (!dateStr) errors.push("التاريخ مطلوب");
+
+  // Validate behavior is from predefined list
+  if (desc && parsedType) {
+    const validList = parsedType === "positive" ? POSITIVE_BEHAVIORS : NEGATIVE_BEHAVIORS;
+    if (!validList.includes(desc)) {
+      errors.push(`السلوك "${desc}" غير موجود في القائمة المعتمدة`);
+    }
+  }
 
   // Try to parse date
   let finalDate = dateStr;
@@ -174,7 +194,7 @@ export function BulkBehaviorExcelUpload({ studentId, studentName }: Props) {
               <p className="font-semibold">ملاحظات:</p>
               <p>• العمود الأول: التاريخ (مثال: 2026-03-30)</p>
               <p>• العمود الثاني: النوع — اكتب "إيجابي" أو "سلبي"</p>
-              <p>• العمود الثالث: وصف السلوك</p>
+              <p>• العمود الثالث: السلوك (اختر من القائمة في ورقة "قائمة السلوكيات")</p>
             </div>
           </div>
         )}
@@ -201,7 +221,7 @@ export function BulkBehaviorExcelUpload({ studentId, studentName }: Props) {
                   <TableRow>
                     <TableHead>التاريخ</TableHead>
                     <TableHead>النوع</TableHead>
-                    <TableHead>الوصف</TableHead>
+                    <TableHead>السلوك</TableHead>
                     <TableHead>الحالة</TableHead>
                   </TableRow>
                 </TableHeader>

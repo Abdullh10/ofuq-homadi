@@ -3,10 +3,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus } from "lucide-react";
 import { useAddBehavior } from "@/hooks/use-students";
+import { POSITIVE_BEHAVIORS, NEGATIVE_BEHAVIORS } from "./behavior-options";
 
 interface Props {
   studentId: string;
@@ -19,10 +19,12 @@ export function AddBehaviorDialog({ studentId }: Props) {
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const addBehavior = useAddBehavior();
 
+  const behaviorOptions = type === "positive" ? POSITIVE_BEHAVIORS : NEGATIVE_BEHAVIORS;
+
   const handleSubmit = () => {
-    if (!description.trim()) return;
+    if (!description) return;
     addBehavior.mutate(
-      { student_id: studentId, type, description: description.trim(), date },
+      { student_id: studentId, type, description, date },
       { onSuccess: () => { setOpen(false); setDescription(""); } }
     );
   };
@@ -42,7 +44,7 @@ export function AddBehaviorDialog({ studentId }: Props) {
         <div className="space-y-3 mt-3">
           <div>
             <Label>نوع السلوك</Label>
-            <Select value={type} onValueChange={(v: "positive" | "negative") => setType(v)}>
+            <Select value={type} onValueChange={(v: "positive" | "negative") => { setType(v); setDescription(""); }}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="positive">إيجابي ✅</SelectItem>
@@ -51,14 +53,21 @@ export function AddBehaviorDialog({ studentId }: Props) {
             </Select>
           </div>
           <div>
-            <Label>الوصف</Label>
-            <Textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="وصف السلوك" />
+            <Label>السلوك</Label>
+            <Select value={description} onValueChange={setDescription}>
+              <SelectTrigger><SelectValue placeholder="اختر السلوك" /></SelectTrigger>
+              <SelectContent>
+                {behaviorOptions.map((b) => (
+                  <SelectItem key={b} value={b}>{b}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div>
             <Label>التاريخ</Label>
             <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
           </div>
-          <Button onClick={handleSubmit} className="w-full" disabled={!description.trim() || addBehavior.isPending}>
+          <Button onClick={handleSubmit} className="w-full" disabled={!description || addBehavior.isPending}>
             حفظ
           </Button>
         </div>
