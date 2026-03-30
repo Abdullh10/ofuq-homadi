@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Brain, Video, CheckCircle, XCircle } from "lucide-react";
+import { BookOpen, Brain, CheckCircle, XCircle, Lightbulb } from "lucide-react";
 import { type ChemistryTopic } from "@/data/chemistry-topics";
 
 interface TopicContentProps {
@@ -52,26 +52,21 @@ export function TopicContent({ topic, onQuizComplete }: TopicContentProps) {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Video className="h-5 w-5 text-primary" />
-            فيديو تعليمي
-          </CardTitle>
-          <CardDescription>{topic.videoTitle}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="aspect-video rounded-lg overflow-hidden bg-muted">
-            <iframe
-              src={topic.videoUrl}
-              title={topic.videoTitle}
-              className="w-full h-full"
-              allowFullScreen
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            />
-          </div>
-        </CardContent>
-      </Card>
+      {topic.detailedExplanation && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Lightbulb className="h-5 w-5 text-primary" />
+              شرح تفصيلي
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {topic.detailedExplanation.map((paragraph, i) => (
+              <p key={i} className="leading-7 text-sm text-muted-foreground">{paragraph}</p>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
