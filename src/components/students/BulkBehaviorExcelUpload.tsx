@@ -221,7 +221,7 @@ export function BulkBehaviorExcelUpload({ studentId, studentName }: Props) {
                   <TableRow>
                     <TableHead>التاريخ</TableHead>
                     <TableHead>النوع</TableHead>
-                    <TableHead>الوصف</TableHead>
+                    <TableHead>السلوك</TableHead>
                     <TableHead>الحالة</TableHead>
                   </TableRow>
                 </TableHeader>
