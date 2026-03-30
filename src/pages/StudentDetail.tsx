@@ -12,6 +12,7 @@ import { StudentRiskBadge } from "@/components/students/StudentRiskBadge";
 import { AddGradeDialog } from "@/components/students/AddGradeDialog";
 import { GradeExcelUpload } from "@/components/students/GradeExcelUpload";
 import { AddBehaviorDialog } from "@/components/students/AddBehaviorDialog";
+import { BulkBehaviorExcelUpload } from "@/components/students/BulkBehaviorExcelUpload";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { Progress } from "@/components/ui/progress";
@@ -322,7 +323,8 @@ export default function StudentDetail() {
 
           {/* Behaviors */}
           <TabsContent value="behaviors">
-            <div className="flex justify-end mb-2">
+            <div className="flex justify-end mb-2 gap-2">
+              <BulkBehaviorExcelUpload studentId={student.id} studentName={student.name} />
               <AddBehaviorDialog studentId={student.id} />
             </div>
             <Card>
