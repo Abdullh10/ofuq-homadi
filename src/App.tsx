@@ -13,6 +13,7 @@ import Reports from "./pages/Reports";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import QuickSupport from "./pages/QuickSupport";
+import StudentRemedial from "./pages/StudentRemedial";
 
 const queryClient = new QueryClient();
 
